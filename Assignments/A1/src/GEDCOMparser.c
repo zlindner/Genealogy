@@ -132,7 +132,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	int lineNum = 0;
 
 	while (fgets(line, sizeof(line), file)) {
-		line[strcspn(line, "\r\n")] = 0;                                                             // remove line terminators
+		line[strcspn(line, "\r\n")] = 0;
 
 		char copy[strlen(line) + 50];
 		strcpy(copy, line);
@@ -155,6 +155,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 		if (level == 0 && buildHeader) {
 			buildHeader = false;
+
 			//TODO validate Header
 
 			hasHeader = true;
@@ -224,7 +225,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				header->submitter = subm;
 			} else if (strcmp(tag, "GEDC") == 0) {
 
-			} else if (strcmp(tag, "VERS") == 0) {                                                 //TODO fix
+			} else if (strcmp(tag, "VERS") == 0) {
 				header->gedcVersion = strtoimax(val, NULL, 0);
 			} else if (strcmp(tag, "CHAR") == 0) {
 				header->encoding = getEncoding(val);
@@ -259,6 +260,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					err.line = -1;
 					return err;
 				}
+
 				strncpy(given, val, first);
 				given[strlen(given)] = '\0';
 
