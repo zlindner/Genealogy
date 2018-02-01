@@ -10,6 +10,8 @@
 1 SUBM @U1@
 0 @I1@ INDI
 1 NAME John /Smith/
+2 GIVN John
+2 SURN Smith
 1 SEX M
 1 FAMS @F1@
 0 @I2@ INDI

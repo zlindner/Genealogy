@@ -255,14 +255,12 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				//TODO only malloc if name isn't already set
 
 				char *given = calloc(sizeof(char), first + 1);
-				//strcpy(given, "");
 				if (given == NULL) {
 					err.type = OTHER;
 					err.line = -1;
 					return err;
 				}
 
-				//memcpy(given, val, first);
 				strncpy(given, val, first);
 				given[strlen(given)] = '\0';
 
@@ -279,29 +277,33 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				indivPtr->givenName = given;
 				indivPtr->surname = surname;
 			} else if (strcmp(tag, "GIVN") == 0) {
-				char *given = malloc(strlen(val) + 1);
-				if (given == NULL) {
-					err.type = OTHER;
-					err.line = -1;
-					return err;
+				if (indivPtr->givenName == NULL) {
+					char *given = malloc(strlen(val) + 1);
+					if (given == NULL) {
+						err.type = OTHER;
+						err.line = -1;
+						return err;
+					}
+
+					strcpy(given, val);
+					given[strlen(given)] = '\0';
+
+					indivPtr->givenName = given;
 				}
-
-				strcpy(given, val);
-				given[strlen(given)] = '\0';
-
-				indivPtr->givenName = given;
 			} else if (strcmp(tag, "SURN") == 0) {
-				char *surname = malloc(strlen(val) + 1);
-				if (surname == NULL) {
-					err.type = OTHER;
-					err.line = -1;
-					return err;
+				if (indivPtr->surname == NULL) {
+					char *surname = malloc(strlen(val) + 1);
+					if (surname == NULL) {
+						err.type = OTHER;
+						err.line = -1;
+						return err;
+					}
+
+					strcpy(surname, val);
+					surname[strlen(surname)] = '\0';
+
+					indivPtr->surname = surname;
 				}
-
-				strcpy(surname, val);
-				surname[strlen(surname)] = '\0';
-
-				indivPtr->surname = surname;
 			} else if (strcmp(tag, "FAMS") == 0) {
 				insertBack(&indivPtr->families, lookupData(hashTable, val));
 			} else if (strcmp(tag, "FAMC") == 0) {
