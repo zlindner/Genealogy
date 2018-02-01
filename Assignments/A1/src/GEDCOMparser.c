@@ -254,13 +254,15 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 				//TODO only malloc if name isn't already set
 
-				char *given = malloc(first + 1);
+				char *given = calloc(sizeof(char), first + 1);
+				//strcpy(given, "");
 				if (given == NULL) {
 					err.type = OTHER;
 					err.line = -1;
 					return err;
 				}
 
+				//memcpy(given, val, first);
 				strncpy(given, val, first);
 				given[strlen(given)] = '\0';
 
