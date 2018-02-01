@@ -44,7 +44,7 @@ void insertData(HashTable *hashTable, char *key, void *data) {
 
 	if (next != NULL && next->key != NULL && strcmp(key, next->key) == 0) {
 		free(next->data);
-		next->data = strdup(data);
+		next->data = data;
 	} else {
 		node = initHashTableNode(key, data);
 
