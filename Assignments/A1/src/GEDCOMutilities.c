@@ -48,12 +48,12 @@ void insertData(HashTable *hashTable, char *key, void *data) {
 	} else {
 		node = initHashTableNode(key, data);
 
-		if (next == hashTable->table[index]) {                 // insert node at front
+		if (next == hashTable->table[index]) {                                 // insert node at front
 			node->next = next;
 			hashTable->table[index] = node;
-		} else if (next == NULL) {                 // insert node at end
+		} else if (next == NULL) {                                 // insert node at end
 			last->next = node;
-		} else {                 // insert node in middle
+		} else {                                 // insert node in middle
 			node->next = next;
 			last->next = node;
 		}
@@ -65,7 +65,7 @@ void *lookupData(HashTable *hashTable, char *key) {
 	HashTableNode *node = hashTable->table[index];
 
 	while (node != NULL && node->key != NULL && strcmp(key, node->key) > 0) {
-		node = node->next;                     // traverse the list
+		node = node->next;                                     // traverse the list
 	}
 
 	if (node == NULL || node->key == NULL || strcmp(key, node->key) != 0) {
@@ -111,7 +111,7 @@ char *getErrorName(ErrorCode code) {
 		return "Invalid header";
 	case INV_RECORD:
 		return "Invalid record";
-	case OTHER:
+	case OTHER_ERROR:
 		return "Other";
 	default:
 		return NULL;
@@ -123,7 +123,7 @@ CharSet getEncoding(char *name) {
 		return ANSEL;
 	}
 
-	if (strcmp(name, "UTF8") == 0) {
+	if (strcmp(name, "UTF8") == 0 || strcmp(name, "UTF-8") == 0) {
 		return UTF8;
 	}
 
@@ -135,7 +135,7 @@ CharSet getEncoding(char *name) {
 		return ASCII;
 	}
 
-	return ANSEL;             // todo default val?
+	return ANSEL;                     // todo default val?
 }
 
 char *getEncodingName(CharSet encoding) {
@@ -198,9 +198,6 @@ void deleteSubmitter(void *toBeDeleted) {
 
 	clearList(&subm->otherFields);
 
-	//TODO maybe have to free address
-	//free(subm->address);
-
 	free(subm);
 	subm = NULL;
 }
@@ -226,8 +223,10 @@ char *printSubmitter(void *toBePrinted) {
 		free(fieldStr);
 	}
 
-	//str = realloc(str, strlen(str) + strlen(subm->address) + 50);
-	//sprintf(str + strlen(str), ", Address: %s", subm->address);
+	if (subm->address[0] != '\0') {
+		str = realloc(str, strlen(str) + strlen(subm->address) + 50);
+		sprintf(str + strlen(str), "\nAddress: %s", subm->address);
+	}
 
 	str[strlen(str)] = '\0';
 
@@ -246,4 +245,35 @@ Field *initializeField(char *tag, char *val) {
 	field->value[strlen(field->value)] = '\0';
 
 	return field;
+}
+
+bool isIndivEvent(char *tag) {
+	char *events[] = {
+		"BIRT", "CHR", "DEAT", "BURI", "CREM", "ADOP", "BAPM", "BARM", "BASM",
+		"BLES", "CHRA", "CONF", "FCOM", "ORDN", "NATU", "EMIG", "IMMI", "CENS",
+		"PROB", "WILL", "GRAD", "RETI", "EVEN"
+	};
+
+	for (int i = 0; i < 23; i++) {
+		if (strcmp(tag, events[i]) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool isFamEvent(char *tag) {
+	char *events[] = {
+		"ANUL", "CENS", "DIV", "DIVF", "ENGA", "MARB", "MARC", "MARR", "MARL",
+		"MARS", "RESI", "EVEN"
+	};
+
+	for (int i = 0; i < 12; i++) {
+		if (strcmp(tag, events[i]) == 0) {
+			return true;
+		}
+	}
+
+	return false;
 }

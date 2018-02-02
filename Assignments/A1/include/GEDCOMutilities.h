@@ -49,4 +49,8 @@ char *printSubmitter(void *toBePrinted);
 
 Field *initializeField(char *tag, char *val);
 
+bool isIndivEvent(char *tag);
+
+bool isFamEvent(char *tag);
+
 #endif
