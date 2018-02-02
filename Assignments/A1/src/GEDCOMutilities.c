@@ -23,7 +23,8 @@ HashTable *initHashTable(size_t size) {
 HashTableNode *initHashTableNode(char *key, void *data) {
 	HashTableNode *hashTableNode = malloc(sizeof(HashTableNode));
 
-	hashTableNode->key = key;
+	hashTableNode->key = malloc(strlen(key) + 1);
+	strcpy(hashTableNode->key, key);
 	hashTableNode->data = data;
 	hashTableNode->next = NULL;
 
@@ -48,7 +49,7 @@ void insertData(HashTable *hashTable, char *key, void *data) {
 	} else {
 		node = initHashTableNode(key, data);
 
-		if (next == hashTable->table[index]) {                                 // insert node at front
+		if (next == hashTable->table[index]) {                          // insert node at front
 			node->next = next;
 			hashTable->table[index] = node;
 		} else if (next == NULL) {                                 // insert node at end
@@ -64,9 +65,9 @@ void *lookupData(HashTable *hashTable, char *key) {
 	int index = hash(hashTable->size, key);
 	HashTableNode *node = hashTable->table[index];
 
-	while (node != NULL && node->key != NULL && strcmp(key, node->key) > 0) {
+	/*while (node != NULL && node->key != NULL && strcmp(key, node->key) > 0) {
 		node = node->next;                                     // traverse the list
-	}
+	}*/
 
 	if (node == NULL || node->key == NULL || strcmp(key, node->key) != 0) {
 		return NULL;
@@ -90,6 +91,7 @@ int hash(size_t tableSize, char *key) {
 void destroyTable(HashTable *hashTable) {
 	for (int i = 0; i < hashTable->size; i++) {
 		if (hashTable->table[i] != NULL) {
+			free(hashTable->table[i]->key);
 			free(hashTable->table[i]);
 			hashTable->table[i] = NULL;
 		}
