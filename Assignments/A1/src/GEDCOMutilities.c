@@ -32,32 +32,18 @@ HashTableNode *initHashTableNode(char *key, void *data) {
 }
 
 void insertData(HashTable *hashTable, char *key, void *data) {
-	HashTableNode *node, *last;
-
+	HashTableNode *node = initHashTableNode(key, data);
 	int index = hash(hashTable->size, key);
 
-	HashTableNode *next = hashTable->table[index];
-
-	while (next != NULL && next->key != NULL && strcmp(key, next->key) > 0) {
-		last = next;
-		next = next->next;
-	}
-
-	if (next != NULL && next->key != NULL && strcmp(key, next->key) == 0) {
-		free(next->data);
-		next->data = data;
+	if (hashTable->table[index] == NULL) {
+		hashTable->table[index] = node;
 	} else {
-		node = initHashTableNode(key, data);
-
-		if (next == hashTable->table[index]) {                          // insert node at front
-			node->next = next;
-			hashTable->table[index] = node;
-		} else if (next == NULL) {                                 // insert node at end
-			last->next = node;
-		} else {                                 // insert node in middle
-			node->next = next;
-			last->next = node;
+		HashTableNode *temp = hashTable->table[index];
+		while (temp->next != NULL) {
+			temp = temp->next;
 		}
+
+		temp->next = node;
 	}
 }
 
@@ -65,15 +51,19 @@ void *lookupData(HashTable *hashTable, char *key) {
 	int index = hash(hashTable->size, key);
 	HashTableNode *node = hashTable->table[index];
 
-	/*while (node != NULL && node->key != NULL && strcmp(key, node->key) > 0) {
-		node = node->next;                                     // traverse the list
-	}*/
-
-	if (node == NULL || node->key == NULL || strcmp(key, node->key) != 0) {
-		return NULL;
+	if (strcmp(node->key, key) == 0) {
+		return node->data;
 	}
 
-	return node->data;
+	while (node->next != NULL) {
+		node = node->next;
+
+		if (strcmp(node->key, key) == 0) {
+			return node->data;
+		}
+	}
+
+	return NULL;
 }
 
 int hash(size_t tableSize, char *key) {
@@ -118,26 +108,6 @@ char *getErrorName(ErrorCode code) {
 	default:
 		return NULL;
 	}
-}
-
-CharSet getEncoding(char *name) {
-	if (strcmp(name, "ANSEL") == 0) {
-		return ANSEL;
-	}
-
-	if (strcmp(name, "UTF8") == 0 || strcmp(name, "UTF-8") == 0) {
-		return UTF8;
-	}
-
-	if (strcmp(name, "UNICODE") == 0) {
-		return UNICODE;
-	}
-
-	if (strcmp(name, "ASCII") == 0) {
-		return ASCII;
-	}
-
-	return ANSEL;                     // todo default val?
 }
 
 char *getEncodingName(CharSet encoding) {

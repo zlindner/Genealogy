@@ -76,10 +76,6 @@ void clearList(List *list) {
 		return;
 	}
 
-	if (list->head == NULL && list->tail == NULL) {
-		return;
-	}
-
 	Node *node;
 
 	while (list->head != NULL) {

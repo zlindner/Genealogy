@@ -9,11 +9,11 @@ int main(void) {
 	GEDCOMerror err = createGEDCOM("assets/simpleGEDCOM.ged", &obj);
 
 	if (err.type == OK) {
-		//char *str = printGEDCOM(obj);
-		//printf("%s\n", str);
-		//free(str);
+		char *str = printGEDCOM(obj);
+		printf("%s\n", str);
+		free(str);
 
-		//deleteGEDCOM(obj);
+		deleteGEDCOM(obj);
 	}
 
 	char *errStr = printError(err);

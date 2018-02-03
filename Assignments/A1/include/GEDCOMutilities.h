@@ -74,13 +74,6 @@ void destroyTable(HashTable *hashTable);
 char *getErrorName(ErrorCode code);
 
 /**
- * Returns a CharSet given a string
- * @param name the string representation of a CharSet
- * @return the CharSet represented by the given string
- */
-CharSet getEncoding(char *name);
-
-/**
  * Returns a CharSet's name as a string
  * @param encoding the CharSet
  * @return the string representation of the encoding

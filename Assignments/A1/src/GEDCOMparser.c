@@ -4,15 +4,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-//TODO something in shakespeare is broken
-//TODO header is basically 100% w/ error checking
-//TODO submitter error checking
-//TODO individual error checking
-//TODO family error checking
-//TODO event error checking
-//TODO field error checking
-//TODO general error checking ex. line lengths
-
 GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	GEDCOMerror err;
 	FILE *file;
@@ -21,11 +12,28 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 	if (file == NULL) {
 		fclose(file);
-
 		err.type = INV_FILE;
 		err.line = -1;
 		return err;
 	}
+
+	Submitter *submitter = malloc(sizeof(Submitter) + 100);
+	if (submitter == NULL) {
+		err.type = OTHER_ERROR;
+		err.line = -1;
+		return err;
+	}
+	submitter->address[0] = '\0';
+	submitter->otherFields = initializeList(&printField, &deleteField, &compareFields);
+
+	Header *header = malloc(sizeof(Header));
+	if (header == NULL) {
+		err.type = OTHER_ERROR;
+		err.line = -1;
+		return err;
+	}
+	header->submitter = submitter;
+	header->otherFields = initializeList(&printField, &deleteField, &compareFields);
 
 	*obj = malloc(sizeof(GEDCOMobject));
 	if (*obj == NULL) {
@@ -34,516 +42,659 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		return err;
 	}
 
+	(*obj)->header = header;
+	(*obj)->submitter = submitter;
 	(*obj)->families = initializeList(&printFamily, &deleteFamily, &compareFamilies);
 	(*obj)->individuals = initializeList(&printIndividual, &deleteIndividual, &compareIndividuals);
 
-	HashTable *hashTable = initHashTable(128);
+	HashTable *hashTable = initHashTable(127);
 	if (hashTable == NULL) {
 		err.type = OTHER_ERROR;
 		err.line = -1;
 		return err;
 	}
 
-	Header *header = NULL;
-	Submitter *subm = NULL;
-
-	bool allocHeader = false;
-	bool allocSubm = false;
-
-	char line[257];
+	char line[255];
 	int lineNum = 0;
-
 	while (fgets(line, sizeof(line), file)) {
-		line[strcspn(line, "\r\n")] = 0;
-
-		char copy[strlen(line) + 50];
-		strcpy(copy, line);
-
-		strtok(copy, " ");
-
-		char tag[strlen(line) + 50];
-		strcpy(tag, strtok(NULL, " "));
-		tag[strlen(tag)] = '\0';
-
-		char val[strlen(line) + 50];
-		if (strlen(line) > strlen(tag) + 2) {
-			strcpy(val, line + 2 + strlen(tag) + 1);
-		} else {
-			strcpy(val, "");
+		if (line[0] == '\n') {                                         // skip blank lines
+			continue;
 		}
-		val[strlen(val)] = '\0';
 
+		if (memchr(line, '\n', strlen(line)) == NULL && memchr(line, '\r', strlen(line)) == NULL) {
+			err.type = INV_GEDCOM;
+			err.line = lineNum;
+			goto ERROR;
+		}
+
+		line[strcspn(line, "\n")] = 0;
+		line[strcspn(line, "\r")] = 0;
 		lineNum++;
 
-		if (tag[0] == '@' && tag[strlen(tag) - 1] == '@') {
-			if (strcmp(val, "INDI") == 0) {
-				Individual *indiv = malloc(sizeof(Individual));
+		int level = -1;
+		if (!isdigit(line[0])) {
+			err.type = INV_RECORD;
+			err.line = lineNum;
+			goto ERROR;
+		} else {
+			level = line[0] - '0';
+		}
 
-				if (indiv == NULL) {
-					err.type = OTHER_ERROR;
-					err.line = -1;
-					goto CLEANUP;
+		strtok(line, " ");
+		char *tag = strtok(NULL, " ");
+		if (tag == NULL) {
+			err.type = INV_RECORD;
+			err.line = lineNum;
+			goto ERROR;
+		}
+
+		char *value = line + 3 + strlen(tag);
+
+		if (strstr(tag, "@") == NULL) {                                         // only concered with pointers this pass
+			continue;
+		}
+
+		if (tag[0] == '@') {
+			if (tag[strlen(tag) - 1] == '@' && strlen(tag) > 2) {
+				if (strcmp(value, "SUBM") == 0) {
+					insertData(hashTable, tag, submitter);
+				} else if (strcmp(value, "INDI") == 0) {
+					Individual *individual = malloc(sizeof(Individual));
+					individual->givenName = calloc(1, sizeof(char));
+					individual->surname = calloc(1, sizeof(char));
+					individual->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
+					individual->families = initializeList(&printFamily, &deleteFamily, &compareFamilies);
+					individual->otherFields = initializeList(&printField, &deleteField, &compareFields);
+
+					insertData(hashTable, tag, individual);
+				} else if (strcmp(value, "FAM") == 0) {
+					Family *family = malloc(sizeof(Family));
+					family->wife = calloc(1, sizeof(Individual));
+					family->husband = calloc(1, sizeof(Individual));
+					family->children = initializeList(&printIndividual, &deleteIndividual, &compareIndividuals);
+					family->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
+					family->otherFields = initializeList(&printField, &deleteField, &compareFields);
+
+					insertData(hashTable, tag, family);
+				} else {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
 				}
-
-				indiv->givenName = calloc(sizeof(char), 100);
-				sprintf(indiv->givenName, "%d", lineNum);
-				indiv->surname = calloc(sizeof(char), 100);
-				indiv->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
-				indiv->families = initializeList(&printFamily, &deleteFamily, &compareFamilies);
-				indiv->otherFields = initializeList(&printField, &deleteField, &compareFields);
-
-				insertData(hashTable, tag, indiv);
-			} else if (strcmp(val, "FAM") == 0) {
-				Family *fam = malloc(sizeof(Family));
-
-				if (fam == NULL) {
-					err.type = OTHER_ERROR;
-					err.line = -1;
-					goto CLEANUP;
-				}
-
-				fam->wife = calloc(sizeof(Individual), 1);
-				fam->husband = calloc(sizeof(Individual), 1);
-				fam->children = initializeList(&printIndividual, &deleteIndividual, &compareIndividuals);
-				fam->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
-				fam->otherFields = initializeList(&printField, &deleteField, &compareFields);
-
-				insertData(hashTable, tag, fam);
-			} else if (strcmp(val, "SUBM") == 0) {
-				allocSubm = true;
-
-				subm = calloc(sizeof(Submitter) + 100, 1);
-
-				if (subm == NULL) {
-					err.type = OTHER_ERROR;
-					err.line = -1;
-					return err;
-				}
-
-				subm->otherFields = initializeList(&printField, &deleteField, &compareFields);
-
-				insertData(hashTable, tag, subm);
+			} else {
+				err.type = INV_RECORD;
+				err.line = lineNum;
+				goto ERROR;
 			}
 		}
 	}
 
 	rewind(file);
 
-	// HEADER
 	bool buildHeader = false;
-	bool hasHeader = false;
 	bool buildHeaderGEDC = false;
-	bool buildingHeaderSOUR = false;
+	bool hasHeader = false;
+	bool hasSource = false;
 	bool hasVersion = false;
 	bool hasEncoding = false;
+	bool acceptField = true;
 
-	bool buildSubm = false;
-	bool hasSubm = false;
+	bool buildSubmitter = false;
+	bool hasName = false;
 
-	Individual *indivPtr = NULL;
-	bool buildIndiv = false;
+	bool buildIndividual = false;
+	Individual *individual;
 
-	Family *famPtr = NULL;
-	bool buildFam = false;
+	bool buildFamily = false;
+	Family *family;
 
-	Event *event = NULL;
 	bool buildEvent = false;
+	Event *event;
 
-	bool hasTRLR;
+	bool hasTRLR = false;
 
 	lineNum = 0;
-
 	while (fgets(line, sizeof(line), file)) {
-		//TODO possibly check for line terminators -> error if dont exist
-		line[strcspn(line, "\r\n")] = 0;
-
-		char copy[strlen(line) + 50];
-		strcpy(copy, line);
-
-		int level = strtok(copy, " ")[0] - '0';
-
-		char tag[strlen(line) + 50];
-		strcpy(tag, strtok(NULL, " "));
-		tag[strlen(tag)] = '\0';
-
-		char val[strlen(line) + 50];
-		if (strlen(line) > strlen(tag) + 2) {
-			strcpy(val, line + 2 + strlen(tag) + 1);
-		} else {
-			strcpy(val, "");
+		if (line[0] == '\n') {                                         // skip blank lines
+			continue;
 		}
-		val[strlen(val)] = '\0';
 
+		if (memchr(line, '\n', strlen(line)) == NULL && memchr(line, '\r', strlen(line)) == NULL) {
+			err.type = INV_GEDCOM;
+			err.line = lineNum;
+			goto ERROR;
+		}
+
+		line[strcspn(line, "\n")] = 0;
+		line[strcspn(line, "\r")] = 0;
 		lineNum++;
 
 		printf("%d\n", lineNum);
 
-		if (level == 0 && buildHeader) {
-			buildHeader = false;
-
-			if (header->source[0] != '\0' && hasVersion && hasEncoding && header->submitter != NULL) {
-				hasHeader = true;
-
-				(*obj)->header = header;
-			} else {
-				err.type = INV_HEADER;
-				err.line = lineNum;
-				goto CLEANUP;
-			}
+		int level = -1;
+		if (!isdigit(line[0])) {
+			err.type = INV_RECORD;
+			err.line = lineNum;
+			goto ERROR;
+		} else {
+			level = line[0] - '0';
 		}
 
-		if (level == 0 && buildSubm) {
-			buildSubm = false;
-
-			if (subm->submitterName[0] != '\0') {
-				hasSubm = true;
-
-				(*obj)->submitter = subm;
-			} else {
-				err.type = INV_RECORD;
-				err.line = lineNum;
-				goto CLEANUP;
-			}
+		strtok(line, " ");
+		char *tag = strtok(NULL, " ");
+		if (tag == NULL) {
+			err.type = INV_RECORD;
+			err.line = lineNum;
+			goto ERROR;
 		}
 
-		if ((level == 0 || level == 1) && buildEvent) {
-			buildEvent = false;
-
-			if (buildIndiv) {
-				insertBack(&indivPtr->events, event);
-			} else if (buildFam) {
-				insertBack(&famPtr->events, event);
-			}
+		char *value = line + 3 + strlen(tag);
+		if (strlen(value) == 0) {
+			value = NULL;
 		}
 
-		if (level == 0 && buildIndiv) {
-			buildIndiv = false;
-			insertBack(&(*obj)->individuals, indivPtr);
-		}
-
-		if (level == 0 && buildFam) {
-			buildFam = false;
-			insertBack(&(*obj)->families, famPtr);
-		}
-
-		if ((level == 0 || level == 1) && buildHeaderGEDC) {
-			if (hasVersion) {
-				buildHeaderGEDC = false;
-			} else {
-				err.type = INV_HEADER;
-				err.line = lineNum;
-				goto CLEANUP;
-			}
-		}
-
-		if ((level == 0 || level == 1) && buildingHeaderSOUR) {
-			buildingHeaderSOUR = false;
-		}
-
-		if (tag[0] == '@' && tag[strlen(tag) - 1] == '@') {
-			if (strcmp(val, "INDI") == 0) {
-				buildIndiv = true;
-				indivPtr = lookupData(hashTable, tag);
+		if (lineNum == 1) {
+			if (strcmp(tag, "HEAD") == 0 && level == 0 && value == NULL) {
+				buildHeader = true;
 				continue;
-			} else if (strcmp(val, "FAM") == 0) {
-				buildFam = true;
-				famPtr = (Family *) lookupData(hashTable, tag);
-				continue;
-			} else if (strcmp(val, "SUBM") == 0) {
-				buildSubm = true;
 			} else {
-				err.type = INV_RECORD;
-				err.line = lineNum;
-				goto CLEANUP;
-			}
-		}
-
-		if (strcmp(tag, "HEAD") == 0) {
-			if (level != 0 || val[0] != '\0') {
-				err.type = INV_HEADER;
-				err.line = lineNum;
-				goto CLEANUP;
-			}
-
-			allocHeader = true;
-
-			buildHeader = true;
-
-			header = calloc(sizeof(Header), 1);
-			if (header == NULL) {
-				err.type = OTHER_ERROR;
+				err.type = INV_GEDCOM;
 				err.line = -1;
-				goto CLEANUP;
+				goto ERROR;
+			}
+		}
+
+		if (hasTRLR) {
+			if (tag != NULL || value != NULL) {
+				err.type = INV_GEDCOM;
+				err.line = -1;
+				goto ERROR;
+			}
+		}
+
+		if (strcmp(tag, "TRLR") == 0) {
+			if (level != 0 || value != NULL) {
+				err.type = INV_RECORD;
+				err.line = lineNum;
+				goto ERROR;
 			}
 
-			header->otherFields = initializeList(&printField, &deleteField, &compareFields);
-
+			hasTRLR = true;
 			continue;
 		}
 
-		if (buildHeader) {
-			if (tag[0] == '\0' || val[0] == '\0') {
-				if (strcmp(tag, "GEDC") == 0) {
-					buildHeaderGEDC = true;
-				} else {
-					err.type = INV_HEADER;
-					err.line = lineNum;
-					goto CLEANUP;
-				}
-			} else {
-				if (strcmp(tag, "SOUR") == 0) {
-					if (level == 1) {
-						buildingHeaderSOUR = true;
-
-						strcpy(header->source, val);
-						header->source[strlen(header->source)] = '\0';
-					} else {
-						err.type = INV_HEADER;
-						err.line = lineNum;
-						goto CLEANUP;
-					}
-				} else if (strcmp(tag, "SUBM") == 0) {
-					header->submitter = subm;
-				} else if (strcmp(tag, "VERS") == 0) {
-					if (buildHeaderGEDC) {
-						header->gedcVersion = strtoimax(val, NULL, 0);
-						hasVersion = true;
-					} else if (!buildingHeaderSOUR) {
-						err.type = INV_HEADER;
-						err.line = lineNum;
-						goto CLEANUP;
-					}
-				} else if (strcmp(tag, "CHAR") == 0) {
-					header->encoding = getEncoding(val);
-
-					// TODO validate encoding
-
-					hasEncoding = true;
-				} else {
-					insertBack(&header->otherFields, initializeField(tag, val));
-				}
+		if (buildIndividual) {
+			if (level == 0) {
+				buildEvent = false;
+				buildIndividual = false;
+				insertBack(&(*obj)->individuals, individual);
 			}
-		}
 
-		if (buildIndiv) {
 			if (strcmp(tag, "NAME") == 0) {
-				char *tok = strtok(val, "/");
+				if (value == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				char *tok = strtok(value, "/");
 				if (tok != NULL) {
-					if (indivPtr->givenName[0] == '\0') {
-						indivPtr->givenName = realloc(indivPtr->givenName, strlen(tok) + 1);
-						strcpy(indivPtr->givenName, tok);
-						indivPtr->givenName[strlen(indivPtr->givenName)] = '\0';
+					if (individual->givenName[0] == '\0') {
+						individual->givenName = realloc(individual->givenName, strlen(tok) + 1);
+						strcpy(individual->givenName, tok);
+						individual->givenName[strlen(individual->givenName)] = '\0';
 					}
 
 					tok = strtok(NULL, "/");
 					if (tok != NULL) {
-						if (indivPtr->surname[0] == '\0') {
-							indivPtr->surname = realloc(indivPtr->surname, strlen(tok) + 1);
-							strcpy(indivPtr->surname, tok);
-							indivPtr->surname[strlen(indivPtr->surname)] = '\0';
+						if (individual->surname[0] == '\0') {
+							individual->surname = realloc(individual->surname, strlen(tok) + 1);
+							strcpy(individual->surname, tok);
+							individual->surname[strlen(individual->surname)] = '\0';
 						}
 					}
 				}
 			} else if (strcmp(tag, "GIVN") == 0) {
-				if (indivPtr->givenName[0] == '\0') {
-					indivPtr->givenName = realloc(indivPtr->givenName, strlen(val) + 1);
-					strcpy(indivPtr->givenName, val);
-					indivPtr->givenName[strlen(indivPtr->givenName)] = '\0';
+				if (individual->givenName[0] == '\0') {
+					individual->givenName = realloc(individual->givenName, strlen(value) + 1);
+					strcpy(individual->givenName, value);
+					individual->givenName[strlen(individual->givenName)] = '\0';
 				}
 			} else if (strcmp(tag, "SURN") == 0) {
-				if (indivPtr->surname[0] == '\0') {
-					indivPtr->surname = realloc(indivPtr->surname, strlen(val) + 1);
-					strcpy(indivPtr->surname, val);
-					indivPtr->surname[strlen(indivPtr->surname)] = '\0';
+				if (individual->surname[0] == '\0') {
+					individual->surname = realloc(individual->surname, strlen(value) + 1);
+					strcpy(individual->surname, value);
+					individual->surname[strlen(individual->surname)] = '\0';
 				}
 			} else if (strcmp(tag, "FAMS") == 0) {
-				insertBack(&indivPtr->families, (Family *) lookupData(hashTable, val));
+				if (value == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				Family *temp = lookupData(hashTable, value);
+				printf("%s\n", value);
+
+				if (temp == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+
+
+				bool F = false;
+				bool M = false;
+				ListIterator iter = createIterator(individual->otherFields);
+				Field *field;
+				while ((field = nextElement(&iter)) != NULL) {
+					if (strcmp(field->tag, "SEX") == 0) {
+						if (strcmp(field->value, "F") == 0) {
+							F = true;
+						} else if (strcmp(field->value, "M") == 0) {
+							M = true;
+						}
+
+						break;
+					}
+				}
+
+				if (F && temp->wife == NULL) {
+					temp->wife = individual;
+				}
+
+				if (M && temp->husband == NULL) {
+					temp->wife = individual;
+				}
 			} else if (strcmp(tag, "FAMC") == 0) {
-				insertBack(&indivPtr->families, (Family *) lookupData(hashTable, val));
+				if (value == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				Family *temp = lookupData(hashTable, value);
+
+				if (temp == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				bool add = true;
+				ListIterator iter = createIterator(temp->children);
+				Individual *child;
+				while ((child = nextElement(&iter)) != NULL) {
+					if (compareIndividuals(child, individual) == 0) {
+						add = false;
+					}
+				}
+
+				if (add) {
+					insertBack(&temp->children, individual);
+				}
 			} else if (isIndivEvent(tag) && !buildEvent) {
-				buildEvent = true;
-
-				event = malloc(sizeof(Event));
-
-				strcpy(event->type, tag);
-				event->type[4] = '\0';
-
-				event->date = calloc(sizeof(char), 1);
-				event->place = calloc(sizeof(char), 1);
-
-				event->otherFields = initializeList(&printEvent, &deleteEvent, &compareEvents);
-				continue;
-			} else if (!buildEvent) {
-				if (tag[0] == '\0' || val[0] == '\0') {
+				if (value != NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				insertBack(&indivPtr->otherFields, initializeField(tag, val));
+				event = malloc(sizeof(Event));
+				strcpy(event->type, tag);
+				event->type[4] = '\0';
+				event->date = calloc(sizeof(char), 1);
+				event->place = calloc(sizeof(char), 1);
+				event->otherFields = initializeList(&printEvent, &deleteEvent, &compareEvents);
+
+				buildEvent = true;
+
+				continue;
+			} else if (!buildEvent && buildIndividual) {
+				if (value == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				Field *field = initializeField(tag, value);
+				insertBack(&individual->otherFields, field);
 			}
 		}
 
-		if (buildFam) {
+		if (buildFamily) {
+			if (level == 0) {
+				buildEvent = false;
+				buildFamily = false;
+				insertBack(&(*obj)->families, family);
+			}
+
 			if (strcmp(tag, "HUSB") == 0) {
-				if (val[0] == '\0') {
+				if (value[0] == '\0') {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				famPtr->husband = (Individual *) lookupData(hashTable, val);
+				Individual *temp = lookupData(hashTable, value);
+
+				if (temp == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				family->husband = temp;
 			} else if (strcmp(tag, "WIFE") == 0) {
-				if (val[0] == '\0') {
+				if (value[0] == '\0') {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				famPtr->wife = (Individual *) lookupData(hashTable, val);
+				Individual *temp = lookupData(hashTable, value);
+
+				if (temp == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				family->wife = temp;
 			} else if (strcmp(tag, "CHIL") == 0) {
-				if (val[0] == '\0') {
+				if (value[0] == '\0') {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				insertBack(&famPtr->children, (Individual *) lookupData(hashTable, val));
-			} else if (isFamEvent(tag)  && !buildEvent) {
-				buildEvent = true;
+				Individual *temp = lookupData(hashTable, value);
+
+				if (temp == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+
+				bool add = true;
+				ListIterator iter = createIterator(family->children);
+				Individual *child;
+				while ((child = nextElement(&iter)) != NULL) {
+					if (compareIndividuals(child, temp) == 0) {
+						add = false;
+					}
+				}
+
+				if (add) {
+					insertBack(&family->children, temp);
+				}
+			} else if (isFamEvent(tag) && !buildEvent) {
+				if (value != NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
 
 				event = malloc(sizeof(Event));
-
 				strcpy(event->type, tag);
 				event->type[4] = '\0';
-
 				event->date = calloc(sizeof(char), 1);
 				event->place = calloc(sizeof(char), 1);
-
 				event->otherFields = initializeList(&printEvent, &deleteEvent, &compareEvents);
 
+				buildEvent = true;
+
 				continue;
-			} else if (!buildEvent) {
-				if (tag[0] == '\0' || val[0] == '\0') {
+			} else if (!buildEvent && buildFamily) {
+				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				insertBack(&famPtr->otherFields, initializeField(tag, val));
+				Field *field = initializeField(tag, value);
+				insertBack(&family->otherFields, field);
 			}
 		}
 
-		if (buildSubm) {
-			if (strcmp(tag, "NAME") == 0) {
-				if (val[0] == '\0') {
-					err.type = INV_RECORD;
-					err.line = lineNum;
-					goto CLEANUP;
-				}
-
-				strcpy(subm->submitterName, val);
-				subm->submitterName[strlen(subm->submitterName)] = '\0';
-			} else if (strcmp(tag, "ADDR") == 0) {
-				if (val[0] != '\0') {
-					strcpy(subm->address, val);
+		//TODO continue tag for address
+		if (buildSubmitter) {
+			if (level == 0) {
+				if (hasName) {
+					buildSubmitter = false;
 				} else {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
+				}
+			}
+
+			if (strcmp(tag, "NAME") == 0) {
+				if (value != NULL && strlen(value) <= 61) {
+					strcpy(submitter->submitterName, value);
+					hasName = true;
+				} else {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
+			} else if (strcmp(tag, "ADDR") == 0) {
+				if (value != NULL) {
+					strcpy(submitter->address, value);
+				} else {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
 				}
 			} else if (strcmp(tag, "CONT") == 0) {
-				if (val[0] == '\0') {
+				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				if (subm->address[0] != '\0') {
-					sprintf(subm->address + strlen(subm->address), "\\n%s", val);
+				if (submitter->address[0] != '\0') {
+					sprintf(submitter->address + strlen(submitter->address), "\\n%s", value);
 				}
 			} else if (strcmp(tag, "CONC") == 0) {
-				if (val[0] == '\0') {
+				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				if (subm->address[0] != '\0') {
-					strcat(subm->address, val);
+				if (submitter->address[0] != '\0') {
+					strcat(submitter->address, value);
 				}
-			} else {
-				if (tag[0] == '\0' || val[0] == '\0') {
-					err.type = INV_RECORD;
+			}
+		}
+
+		if (buildHeader) {
+			if (level == 0) {
+				if (hasSource && hasVersion && hasEncoding) {
+					buildHeader = false;
+					acceptField = false;
+					hasHeader = true;
+				} else {
+					err.type = INV_HEADER;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
+			}
 
-				insertBack(&subm->otherFields, initializeField(tag, val));
+			if (level == 1 && buildHeaderGEDC) {
+				buildHeaderGEDC = false;
+			}
+
+			if (strcmp(tag, "SOUR") == 0) {
+				if (level == 1 && value != NULL) {
+					strcpy(header->source, value);
+					hasSource = true;
+				}
+			} else if (strcmp(tag, "GEDC") == 0) {
+				if (level == 1 && value == NULL) {
+					buildHeaderGEDC = true;
+					continue;
+				}
+			} else if (strcmp(tag, "VERS") == 0 && buildHeaderGEDC) {
+				if (level == 2 && value != NULL) {
+					float version = atof(value);
+					header->gedcVersion = version;
+					hasVersion = true;
+				} else {
+					err.type = INV_HEADER;
+					err.line = lineNum;
+					goto ERROR;
+				}
+			} else if (strcmp(tag, "CHAR") == 0) {
+				if (level == 1 && value != NULL) {
+					if (strcmp(value, "ANSEL") == 0) {
+						header->encoding = ANSEL;
+						hasEncoding = true;
+					} else if (strcmp(value, "UTF8") == 0 || strcmp(value, "UTF-8") == 0) {
+						header->encoding = UTF8;
+						hasEncoding = true;
+					} else if (strcmp(value, "UNICODE") == 0) {
+						header->encoding = UNICODE;
+						hasEncoding = true;
+					} else if (strcmp(value, "ASCII") == 0) {
+						header->encoding = ASCII;
+						hasEncoding = true;
+					} else {
+						err.type = INV_HEADER;
+						err.line = lineNum;
+						goto ERROR;
+					}
+				} else {
+					err.type = INV_HEADER;
+					err.line = lineNum;
+					goto ERROR;
+				}
+			} else if (strcmp(tag, "SUBM") == 0) {
+				if (level == 1 && value != NULL) {
+					Submitter *temp = lookupData(hashTable, value);
+
+					if (temp == NULL) {
+						err.type = INV_HEADER;
+						err.line = lineNum;
+						goto ERROR;
+					}
+
+					header->submitter = temp;
+				} else {
+					err.type = INV_HEADER;
+					err.line = lineNum;
+					goto ERROR;
+				}
+			} else if (value != NULL && acceptField) {
+				Field *field = initializeField(tag, value);
+				insertBack(&header->otherFields, field);
+			} else if (acceptField) {
+				err.type = INV_HEADER;
+				err.line = lineNum;
+				goto ERROR;
 			}
 		}
 
 		if (buildEvent) {
 			if (strcmp(tag, "DATE") == 0) {
-				if (val[0] == '\0') {
+				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				event->date = realloc(event->date, strlen(val) + 1);
-				strcpy(event->date, val);
+				event->date = realloc(event->date, strlen(value) + 1);
+				strcpy(event->date, value);
 				event->date[strlen(event->date)] = '\0';
 			} else if (strcmp(tag, "PLAC") == 0) {
-				if (val[0] == '\0') {
+				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				event->place = realloc(event->place, strlen(val) + 1);
-				strcpy(event->place, val);
+				event->place = realloc(event->place, strlen(value) + 1);
+				strcpy(event->place, value);
 				event->place[strlen(event->place)] = '\0';
-			} else {
-				if (tag[0] == '\0' || val[0] == '\0') {
+			} else if (level > 1) {
+				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
-					goto CLEANUP;
+					goto ERROR;
 				}
 
-				insertBack(&event->otherFields, initializeField(tag, val));
+				Field *field = initializeField(tag, value);
+				insertBack(&event->otherFields, field);
+			}
+
+			if (level <= 1) {
+				if (buildIndividual) {
+					insertBack(&individual->events, event);
+					buildEvent = false;
+				} else if (buildFamily) {
+					insertBack(&family->events, event);
+					buildEvent = false;
+				}
 			}
 		}
 
-		if (strcmp(tag, "TRLR") == 0) {
-			if (level == 0 && val[0] == '\0') {
-				hasTRLR = true;
+		if (tag[0] == '@') {
+			if (tag[strlen(tag) - 1] == '@' && strlen(tag) > 2) {
+				if (strcmp(value, "SUBM") == 0) {
+					Submitter *temp = lookupData(hashTable, tag);
+
+					if (temp == NULL) {
+						err.type = INV_RECORD;
+						err.line = lineNum;
+						goto ERROR;
+					}
+
+					buildSubmitter = true;
+					submitter = temp;
+
+					continue;
+				} else if (strcmp(value, "INDI") == 0) {
+					Individual *temp = lookupData(hashTable, tag);
+
+					if (temp == NULL) {
+						err.type = INV_RECORD;
+						err.line = lineNum;
+						goto ERROR;
+					}
+
+					buildIndividual = true;
+					individual = temp;
+				} else if (strcmp(value, "FAM") == 0) {
+					Family *temp = lookupData(hashTable, tag);
+
+					if (temp == NULL) {
+						err.type = INV_RECORD;
+						err.line = lineNum;
+						goto ERROR;
+					}
+
+					buildFamily = true;
+					family = temp;
+				} else {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
 			} else {
 				err.type = INV_RECORD;
 				err.line = lineNum;
-				goto CLEANUP;
+				goto ERROR;
 			}
 		}
 	}
-
-	//printf("%s\n", printGEDCOM(*obj));
-	//printf("%s\n", printHeader((*obj)->header));
-
-	//printf("%s\n", printIndividual(lookupData(hashTable, "@I1@")));
-
-	ListIterator iter = createIterator((*obj)->individuals);
-	   Individual *indiboy;
-	   while ((indiboy = nextElement(&iter)) != NULL) {
-	        printf("%s\n", printIndividual(indiboy));
-	   }
 
 	if (!hasHeader || !hasTRLR) {
 		err.type = INV_GEDCOM;
 		err.line = -1;
-		goto CLEANUP;
+		goto ERROR;
 	}
-
-	fclose(file);
 
 	destroyTable(hashTable);
 
@@ -551,17 +702,10 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	err.line = -1;
 	return err;
 
-CLEANUP:
+	ERROR:
+
 	destroyTable(hashTable);
-
-	if (allocHeader) {
-		deleteHeader(header);
-	} else if (allocSubm) {
-		deleteSubmitter(subm);
-	}
-
-	clearList(&((*obj)->families));
-	clearList(&((*obj)->individuals));
+	deleteGEDCOM(*obj);
 
 	return err;
 }
@@ -578,14 +722,14 @@ char *printGEDCOM(const GEDCOMobject *obj) {
 	char *header = printHeader(obj->header);
 	char *str = malloc(strlen(header) + 50);
 
-	sprintf(str, "GEDCOM:\n%s", header);
+	sprintf(str, "GEDCOM:\n%s\n", header);
 	free(header);
 
 	iter = createIterator(obj->families);
 	while ((fam = (Family *) nextElement(&iter)) != NULL) {
 		char *famStr = printFamily(fam);
 		str = realloc(str, strlen(str) + strlen(famStr) + 50);
-		sprintf(str + strlen(str), "%s", famStr);
+		sprintf(str + strlen(str), "%s\n", famStr);
 		free(famStr);
 	}
 
@@ -593,7 +737,7 @@ char *printGEDCOM(const GEDCOMobject *obj) {
 	while ((indiv = (Individual *) nextElement(&iter)) != NULL) {
 		char *indivStr = printIndividual(indiv);
 		str = realloc(str, strlen(str) + strlen(indivStr) + 50);
-		sprintf(str + strlen(str), "%s", indivStr);
+		sprintf(str + strlen(str), "%s\n", indivStr);
 		free(indivStr);
 	}
 
@@ -735,7 +879,6 @@ void deleteIndividual(void *toBeDeleted) {
 	indiv->surname = NULL;
 
 	clearList(&indiv->events);
-	clearList(&indiv->families);
 	clearList(&indiv->otherFields);
 
 	free(indiv);
@@ -766,7 +909,6 @@ char *printIndividual(void *toBePrinted) {
 
 	ListIterator iter;
 	Event *event;
-	Family *fam;
 	Field *field;
 
 	char *str = malloc(strlen(indiv->givenName) + strlen(indiv->surname) + 50);
@@ -778,14 +920,6 @@ char *printIndividual(void *toBePrinted) {
 		str = realloc(str, strlen(str) + strlen(eventStr) + 50);
 		sprintf(str + strlen(str), "%s\n", eventStr);
 		free(eventStr);
-	}
-
-	iter = createIterator(indiv->families);
-	while ((fam = (Family *) nextElement(&iter)) != NULL) {
-		char *famStr = printFamily(fam);
-		str = realloc(str, strlen(str) + strlen(famStr) + 50);
-		sprintf(str + strlen(str), "%s\n", famStr);
-		free(famStr);
 	}
 
 	iter = createIterator(indiv->otherFields);
@@ -808,15 +942,6 @@ void deleteFamily(void *toBeDeleted) {
 		return;
 	}
 
-	if (fam->wife != NULL) {
-		deleteIndividual(fam->wife);
-	}
-
-	if (fam->husband != NULL) {
-		deleteIndividual(fam->husband);
-	}
-
-	clearList(&fam->children);
 	clearList(&fam->events);
 	clearList(&fam->otherFields);
 
@@ -875,33 +1000,34 @@ char *printFamily(void *toBePrinted) {
 	char *str = calloc(sizeof(char), 1);
 
 	if (fam->wife != NULL) {
-		str = realloc(str, strlen(str) + strlen(printIndividual(fam->wife)) + 50);
-		sprintf(str, "\nFAMILY: \nWife: %s", printIndividual(fam->wife));
+		str = realloc(str, strlen(str) + strlen(fam->wife->givenName) + strlen(fam->wife->surname) + 50);
+		sprintf(str, "\nFAMILY: \nWife: %s%s", fam->wife->givenName, fam->wife->surname);
 	}
 
 	if (fam->husband != NULL) {
-		str = realloc(str, strlen(str) + strlen(printIndividual(fam->husband)) + 50);
+		str = realloc(str, strlen(str) + strlen(fam->husband->givenName) + strlen(fam->husband->surname) + 50);
 
 		if (fam->wife != NULL) {
-			sprintf(str + strlen(str), "\nHusband: %s", printIndividual(fam->husband));
+			sprintf(str + strlen(str), "\nHusband: %s%s", fam->husband->givenName, fam->husband->surname);
 		} else {
-			sprintf(str, "\nFAMILY: \nHusband: %s", printIndividual(fam->husband));
+			sprintf(str, "\nFAMILY: \nHusband: %s%s", fam->husband->givenName, fam->husband->surname);
 		}
 	}
 
-	/*iter = createIterator(fam->children);
-	   while ((child = (Individual *) nextElement(&iter)) != NULL) {
-	        char *childStr = printIndividual(child);
-	        str = realloc(str, strlen(str) + strlen(childStr) + 50);
-	        sprintf(str + strlen(str), "\n%s", childStr);
-	        free(childStr);
-	   }*/
+	iter = createIterator(fam->children);
+	while ((child = (Individual *) nextElement(&iter)) != NULL) {
+		char *childStr = malloc(strlen(child->givenName) + strlen(child->surname) + 50);
+		sprintf(childStr, "Child: %s%s", child->givenName, child->surname);
+		str = realloc(str, strlen(str) + strlen(childStr) + 50);
+		sprintf(str + strlen(str), "\n%s", childStr);
+		free(childStr);
+	}
 
 	iter = createIterator(fam->events);
 	while ((event = (Event *) nextElement(&iter)) != NULL) {
 		char *eventStr = printEvent(event);
 		str = realloc(str, strlen(str) + strlen(eventStr) + 50);
-		sprintf(str + strlen(str), "\n%s\n", eventStr);
+		sprintf(str + strlen(str), "%s", eventStr);
 		free(eventStr);
 	}
 
