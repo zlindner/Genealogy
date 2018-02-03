@@ -209,7 +209,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 			}
 
 			hasTRLR = true;
-			continue;
+			//continue;
 		}
 
 		if (buildIndividual) {
@@ -374,6 +374,8 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					insertBack(&family->events, event);
 					buildEvent = false;
 				}
+
+				printf("Build end - %d\n", lineNum);
 
 				buildFamily = false;
 				insertBack(&(*obj)->families, family);
@@ -682,6 +684,8 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 						err.line = lineNum;
 						goto ERROR;
 					}
+
+					printf("Build start - %d\n", lineNum);
 
 					buildFamily = true;
 					family = temp;

@@ -81,9 +81,29 @@ int hash(size_t tableSize, char *key) {
 void destroyTable(HashTable *hashTable) {
 	for (int i = 0; i < hashTable->size; i++) {
 		if (hashTable->table[i] != NULL) {
-			free(hashTable->table[i]->key);
-			free(hashTable->table[i]);
-			hashTable->table[i] = NULL;
+			HashTableNode *node = hashTable->table[i];
+			if (node->next == NULL) {
+				free(hashTable->table[i]->key);
+				free(hashTable->table[i]);
+				hashTable->table[i] = NULL;
+			} else {
+				free(hashTable->table[i]->next->key);
+				free(hashTable->table[i]->next);
+				hashTable->table[i]->next = NULL;
+				free(hashTable->table[i]->key);
+				free(hashTable->table[i]);
+				hashTable->table[i] = NULL;
+				/*HashTableNode *prev = NULL;
+
+				while (node->next != NULL) {
+					prev = node;
+					node = node->next;
+
+					free(prev->key);
+					free(prev);
+					prev = NULL;
+				}*/
+			}
 		}
 	}
 
