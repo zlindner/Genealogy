@@ -249,3 +249,21 @@ bool isFamEvent(char *tag) {
 
 	return false;
 }
+
+void clearListFake(List *list) {
+	if (list == NULL) {
+		return;
+	}
+
+	Node *node;
+
+	while (list->head != NULL) {
+		node = list->head;
+		list->head = list->head->next;
+
+		free(node);
+	}
+
+	list->head = NULL;
+	list->tail = NULL;
+}

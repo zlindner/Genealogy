@@ -71,15 +71,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		line[strcspn(line, "\r")] = 0;
 		lineNum++;
 
-		int level = -1;
-		if (!isdigit(line[0])) {
-			err.type = INV_RECORD;
-			err.line = lineNum;
-			goto ERROR;
-		} else {
-			level = line[0] - '0';
-		}
-
 		strtok(line, " ");
 		char *tag = strtok(NULL, " ");
 		if (tag == NULL) {
@@ -168,8 +159,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		line[strcspn(line, "\n")] = 0;
 		line[strcspn(line, "\r")] = 0;
 		lineNum++;
-
-		printf("%d\n", lineNum);
 
 		int level = -1;
 		if (!isdigit(line[0])) {
@@ -362,6 +351,10 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 		if (buildFamily) {
 			if (level == 0) {
+				if (buildEvent) {
+					insertBack(&family->events, event);
+					buildEvent = false;
+				}
 				buildEvent = false;
 				buildFamily = false;
 				insertBack(&(*obj)->families, family);
@@ -939,6 +932,7 @@ void deleteFamily(void *toBeDeleted) {
 	}
 
 	clearList(&fam->events);
+	clearListFake(&fam->children);
 	clearList(&fam->otherFields);
 
 	free(fam);

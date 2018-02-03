@@ -128,4 +128,10 @@ bool isIndivEvent(char *tag);
  */
 bool isFamEvent(char *tag);
 
+/**
+ * Clears a list without actually deleting any node data
+ * @param list the list
+ */
+void clearListFake(List *list);
+
 #endif
