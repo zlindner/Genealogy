@@ -6,7 +6,7 @@
 
 int main(void) {
 	GEDCOMobject *obj;
-	GEDCOMerror err = createGEDCOM("assets/simpleGEDCOM.ged", &obj);
+	GEDCOMerror err = createGEDCOM("assets/shakespeare.ged", &obj);
 
 	if (err.type == OK) {
 		char *str = printGEDCOM(obj);

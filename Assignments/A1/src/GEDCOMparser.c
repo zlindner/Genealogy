@@ -146,6 +146,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 	lineNum = 0;
 	while (fgets(line, sizeof(line), file)) {
+		lineNum++;
 		if (line[0] == '\n') {                                         // skip blank lines
 			continue;
 		}
@@ -158,7 +159,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 		line[strcspn(line, "\n")] = 0;
 		line[strcspn(line, "\r")] = 0;
-		lineNum++;
 
 		int level = -1;
 		if (!isdigit(line[0])) {
@@ -214,7 +214,11 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 		if (buildIndividual) {
 			if (level == 0) {
-				buildEvent = false;
+				if (buildEvent) {
+					insertBack(&individual->events, event);
+					buildEvent = false;
+				}
+
 				buildIndividual = false;
 				insertBack(&(*obj)->individuals, individual);
 			}
@@ -256,6 +260,11 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					individual->surname[strlen(individual->surname)] = '\0';
 				}
 			} else if (strcmp(tag, "FAMS") == 0) {
+				if (buildEvent) {
+					insertBack(&individual->events, event);
+					buildEvent = false;
+				}
+
 				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
@@ -294,6 +303,11 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					temp->wife = individual;
 				}
 			} else if (strcmp(tag, "FAMC") == 0) {
+				if (buildEvent) {
+					insertBack(&individual->events, event);
+					buildEvent = false;
+				}
+
 				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
@@ -320,7 +334,12 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				if (add) {
 					insertBack(&temp->children, individual);
 				}
-			} else if (isIndivEvent(tag) && !buildEvent) {
+			} else if (isIndivEvent(tag)) {
+				if (buildEvent) {
+					insertBack(&individual->events, event);
+					buildEvent = false;
+				}
+
 				if (value != NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
@@ -337,7 +356,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				buildEvent = true;
 
 				continue;
-			} else if (!buildEvent && buildIndividual) {
+			} else if (!buildEvent && buildIndividual && !isIndivEvent(tag)) {
 				if (value == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
@@ -355,7 +374,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					insertBack(&family->events, event);
 					buildEvent = false;
 				}
-				buildEvent = false;
+
 				buildFamily = false;
 				insertBack(&(*obj)->families, family);
 			}
