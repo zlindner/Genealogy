@@ -87,14 +87,7 @@ void destroyTable(HashTable *hashTable) {
 				free(hashTable->table[i]);
 				hashTable->table[i] = NULL;
 			} else {
-				free(hashTable->table[i]->next->key);
-				free(hashTable->table[i]->next);
-				hashTable->table[i]->next = NULL;
-				free(hashTable->table[i]->key);
-				free(hashTable->table[i]);
-				hashTable->table[i] = NULL;
-				/*HashTableNode *prev = NULL;
-
+				HashTableNode *prev = NULL;
 				while (node->next != NULL) {
 					prev = node;
 					node = node->next;
@@ -102,7 +95,11 @@ void destroyTable(HashTable *hashTable) {
 					free(prev->key);
 					free(prev);
 					prev = NULL;
-				}*/
+				}
+
+				free(node->key);
+				free(node);
+				node = NULL;
 			}
 		}
 	}
