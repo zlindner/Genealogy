@@ -679,6 +679,8 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		}
 	}
 
+	fclose(file);
+
 	if (!hasHeader || !hasTRLR) {
 		err.type = INV_GEDCOM;
 		err.line = -1;
@@ -692,6 +694,8 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	return err;
 
 	ERROR:
+
+	fclose(file);
 
 	destroyTable(hashTable);
 	deleteGEDCOM(*obj);
