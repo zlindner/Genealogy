@@ -109,8 +109,8 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					insertData(hashTable, tag, individual);
 				} else if (strcmp(value, "FAM") == 0) {
 					Family *family = malloc(sizeof(Family));
-					family->wife = calloc(1, sizeof(Individual));
-					family->husband = calloc(1, sizeof(Individual));
+					family->wife = NULL;
+					family->husband = NULL;
 					family->children = initializeList(&printIndividual, &deleteIndividual, &compareIndividuals);
 					family->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
 					family->otherFields = initializeList(&printField, &deleteField, &compareFields);
@@ -274,15 +274,12 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				}
 
 				Family *temp = lookupData(hashTable, value);
-				printf("%s\n", value);
 
 				if (temp == NULL) {
 					err.type = INV_RECORD;
 					err.line = lineNum;
 					goto ERROR;
 				}
-
-
 
 				bool F = false;
 				bool M = false;
@@ -458,7 +455,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 			}
 		}
 
-		//TODO continue tag for address
 		if (buildSubmitter) {
 			if (level == 0) {
 				if (hasName) {
