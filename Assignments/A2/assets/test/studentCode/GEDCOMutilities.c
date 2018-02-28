@@ -524,7 +524,6 @@ void ancestorsN(List *g[], const Individual *person, int n, int max) {
 		Individual *wife = NULL;
 
 		if (fam->wife != NULL) {
-			//printf("%s %s\n", fam->wife->givenName, fam->wife->surname);
 			wife = malloc(sizeof(Individual));
 			wife->givenName = malloc(strlen(fam->wife->givenName));
 			wife->surname = malloc(strlen(fam->wife->surname));

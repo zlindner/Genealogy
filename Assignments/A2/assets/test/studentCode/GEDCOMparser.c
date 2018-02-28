@@ -72,9 +72,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	while (fgets(line, sizeof(line), file)) {
 		lineNum++;
 
-
-
-		if (line[0] == '\n') {         // skip blank lines
+		if (line[0] == '\n') {                 // skip blank lines
 			continue;
 		}
 
@@ -105,7 +103,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 		char *value = line + 3 + strlen(tag);
 
-		if (strstr(tag, "@") == NULL) {         // only concered with pointers this pass
+		if (strstr(tag, "@") == NULL) {                 // only concered with pointers this pass
 			continue;
 		}
 
@@ -174,7 +172,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		lineNum++;
 		int len = strlen(line);
 
-		if (line[0] == '\n') {         // skip blank lines
+		if (line[0] == '\n') {                 // skip blank lines
 			continue;
 		}
 
@@ -255,9 +253,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 			if (strcmp(tag, "NAME") == 0) {
 				if (value == NULL) {
-					err.type = INV_RECORD;
-					err.line = lineNum;
-					goto ERROR;
+					continue;
 				}
 
 				char *tok = strtok(value, "/");
