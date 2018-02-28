@@ -7,14 +7,14 @@
 
 int main(void) {
 	GEDCOMobject *obj;
-	GEDCOMerror err = createGEDCOM("assets/simpleValid.ged", &obj);
+	GEDCOMerror err = createGEDCOM("assets/someFile.ged", &obj);
 
 	if (err.type == OK) {
 		char *str = printGEDCOM(obj);
 		printf("%s\n", str);
 		free(str);
 
-        //writeGEDCOM("assets/output.ged", obj);
+        writeGEDCOM("assets/output.ged", obj);
 
 		deleteGEDCOM(obj);
 	}
