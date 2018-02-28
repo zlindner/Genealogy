@@ -17,7 +17,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	file = fopen(fileName, "r");
 
 	if (file == NULL) {
-		fclose(file);
+		//fclose(file);
 		err.type = INV_FILE;
 		err.line = -1;
 		return err;
