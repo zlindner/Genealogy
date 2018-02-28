@@ -313,8 +313,8 @@ void descendants(List *d, const Individual *person) {
 			}
 
 			Individual *copy = malloc(sizeof(Individual));
-			copy->givenName = malloc(strlen(child->givenName));
-			copy->surname = malloc(strlen(child->surname));
+			copy->givenName = calloc(strlen(child->givenName), sizeof(char) + 20);
+			copy->surname = calloc(strlen(child->surname), sizeof(char) + 20);
 
 			strcpy(copy->givenName, child->givenName);
 			strcpy(copy->surname, child->surname);
@@ -328,7 +328,7 @@ void descendants(List *d, const Individual *person) {
 					birth = malloc(sizeof(Event));
 					strcpy(birth->type, "BIRT");
 
-					birth->date = malloc(strlen(event->date));
+					birth->date = malloc(strlen(event->date) + 50);
 					strcpy(birth->date, event->date);
 					break;
 				}
