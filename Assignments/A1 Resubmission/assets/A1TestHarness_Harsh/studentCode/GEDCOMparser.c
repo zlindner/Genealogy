@@ -8,6 +8,12 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	GEDCOMerror err;
 	FILE *file;
 
+	if (fileName == NULL) {
+		err.type = INV_FILE;
+		err.line = -1;
+		return err;
+	}
+
 	file = fopen(fileName, "r");
 
 	if (file == NULL || fileName == NULL || strcmp(fileName + strlen(fileName) - 4, ".ged") != 0) {
