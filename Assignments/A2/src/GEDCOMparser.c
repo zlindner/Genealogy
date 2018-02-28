@@ -1616,7 +1616,7 @@ void deleteIndividual(void *toBeDeleted) {
 
 	clearList(&indiv->events);
 	clearList(&indiv->otherFields);
-	//clearListFake(&indiv->families);
+	clearListFake(&indiv->families);
 
 	free(indiv);
 	indiv = NULL;
