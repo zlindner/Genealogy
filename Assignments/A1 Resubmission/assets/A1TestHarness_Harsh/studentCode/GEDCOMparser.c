@@ -250,7 +250,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				if (tok != NULL) {
 					if (individual->givenName[0] == '\0') {
 						tok[strlen(tok) - 1] = '\0';
-						individual->givenName = realloc(individual->givenName, strlen(tok));
+						individual->givenName = realloc(individual->givenName, strlen(tok) + 1);
 						strcpy(individual->givenName, tok);
 						individual->givenName[strlen(individual->givenName)] = '\0';
 					}
@@ -258,7 +258,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					tok = strtok(NULL, "/");
 					if (tok != NULL) {
 						if (individual->surname[0] == '\0') {
-							individual->surname = realloc(individual->surname, strlen(tok));
+							individual->surname = realloc(individual->surname, strlen(tok) + 1);
 							strcpy(individual->surname, tok);
 							individual->surname[strlen(individual->surname)] = '\0';
 						}
