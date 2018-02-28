@@ -4,13 +4,6 @@
 #include "LinkedListAPI.h"
 #include "GEDCOMutilities.h"
 
-bool compare(const void *first, const void *second) {
-	Individual *a = (Individual *) first;
-	Individual *b = (Individual *) second;
-
-	return strcmp(a->givenName, b->givenName) && strcmp(a->surname, b->surname);
-}
-
 int main(void) {
 	GEDCOMobject *obj;
 	GEDCOMerror err = createGEDCOM("assets/simpleValid2GenE1.ged", &obj);
