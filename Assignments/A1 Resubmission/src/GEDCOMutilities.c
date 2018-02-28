@@ -315,6 +315,7 @@ void descendants(List *d, const Individual *person) {
 			Individual *copy = malloc(sizeof(Individual));
 			copy->givenName = calloc(strlen(child->givenName), sizeof(char) + 20);
 			copy->surname = calloc(strlen(child->surname), sizeof(char) + 20);
+			copy->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
 
 			strcpy(copy->givenName, child->givenName);
 			strcpy(copy->surname, child->surname);
