@@ -51,6 +51,10 @@ void *lookupData(HashTable *hashTable, char *key) {
 	int index = hash(hashTable->size, key);
 	HashTableNode *node = hashTable->table[index];
 
+	if (node == NULL) {
+		return NULL;
+	}
+
 	if (strcmp(node->key, key) == 0) {
 		return node->data;
 	}
@@ -283,4 +287,104 @@ void clearListFake(List *list) {
 
 	list->head = NULL;
 	list->tail = NULL;
+}
+
+void descendants(List *d, const Individual *person) {
+	ListIterator iterFam = createIterator(person->families);
+	Family *fam;
+
+	while ((fam = nextElement(&iterFam)) != NULL) {
+		bool spouse = false;
+
+		if (fam->wife != NULL && strcmp(fam->wife->givenName, person->givenName) == 0 && strcmp(fam->wife->surname, person->surname) == 0) {
+			spouse = true;
+		}
+
+		if (fam->husband != NULL && strcmp(fam->husband->givenName, person->givenName) == 0 && strcmp(fam->husband->surname, person->surname) == 0) {
+			spouse = true;
+		}
+
+		ListIterator iterChild = createIterator(fam->children);
+		Individual *child;
+
+		while ((child = nextElement(&iterChild)) != NULL) {
+			if (strcmp(child->givenName, person->givenName) == 0 && strcmp(child->surname, person->surname) == 0) {
+				break;
+			}
+
+			Individual *copy = malloc(sizeof(Individual));
+			copy->givenName = malloc(strlen(child->givenName));
+			copy->surname = malloc(strlen(child->surname));
+
+			strcpy(copy->givenName, child->givenName);
+			strcpy(copy->surname, child->surname);
+
+			ListIterator iterEvent = createIterator(child->events);
+			Event *event;
+			Event *birth = NULL;
+
+			while ((event = nextElement(&iterEvent)) != NULL) {
+				if (strcmp(event->type, "BIRT") == 0) {
+					birth = malloc(sizeof(Event));
+					strcpy(birth->type, "BIRT");
+
+					birth->date = malloc(strlen(event->date));
+					strcpy(birth->date, event->date);
+					break;
+				}
+			}
+
+			if (birth != NULL) {
+				insertBack(&copy->events, birth);
+			}
+
+			ListIterator iter = createIterator(*d);
+			Individual *i;
+			bool exists = false;
+
+			while ((i = nextElement(&iter)) != NULL) {
+				if (strcmp(i->givenName, child->givenName) == 0 && strcmp(i->surname, child->surname) == 0) {
+					char b1[100];
+					char b2[100];
+
+					b1[0] = 0;
+					b2[0] = 0;
+
+					iterEvent = createIterator(i->events);
+
+					while ((event = nextElement(&iterEvent)) != NULL) {
+						if (strcmp(event->type, "BIRT") == 0) {
+							strcpy(b1, event->date);
+						}
+					}
+
+					iterEvent = createIterator(child->events);
+
+					while ((event = nextElement(&iterEvent)) != NULL) {
+						if (strcmp(event->type, "BIRT") == 0) {
+							strcpy(b2, event->date);
+						}
+					}
+
+					if (b1[0] != 0 && b2[0] != 0) {
+						if (strcmp(b1, b2) == 0) {
+							exists = true;
+						}
+					} else if (b1[0] == 0 && b2[0] == 0) {
+						exists = true;
+					}
+				}
+			}
+
+			if (!exists) {
+				insertBack(d, copy);
+			}
+
+			if (getLength(child->families) == 1 && !spouse) {
+				continue;
+			}
+
+			descendants(d, child);
+		}
+	}
 }
