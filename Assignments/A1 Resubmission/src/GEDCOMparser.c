@@ -17,7 +17,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	file = fopen(fileName, "r");
 
 	if (file == NULL) {
-		//fclose(file);
 		err.type = INV_FILE;
 		err.line = -1;
 		return err;
@@ -919,6 +918,7 @@ void deleteIndividual(void *toBeDeleted) {
 	free(indiv->surname);
 	indiv->surname = NULL;
 
+	clearListFake(&indiv->families);
 	clearList(&indiv->events);
 	clearList(&indiv->otherFields);
 
