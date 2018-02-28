@@ -14,12 +14,13 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		return err;
 	}
 
-	if (fopen(fileName, "r") == NULL) {
+	file = fopen(fileName, "r");
+
+	if (file == NULL) {
+		fclose(file);
 		err.type = INV_FILE;
 		err.line = -1;
 		return err;
-	} else {
-		file = fopen(fileName, "r");
 	}
 
 	if (file == NULL || fileName == NULL || strcmp(fileName + strlen(fileName) - 4, ".ged") != 0) {
