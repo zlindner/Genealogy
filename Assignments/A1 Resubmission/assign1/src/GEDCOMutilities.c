@@ -132,7 +132,7 @@ char *getErrorName(ErrorCode code) {
 }
 
 char *getEncodingName(CharSet encoding) {
-	char *names[] = {"ANSEL", "UTF-8", "UNICODE", "ASCII"};
+	char *names[] = {"Ansel", "UTF-8", "Unicode", "ASCII"};
 
 	return names[encoding];
 }
@@ -296,11 +296,11 @@ void descendants(List *d, const Individual *person) {
 	while ((fam = nextElement(&iterFam)) != NULL) {
 		bool spouse = false;
 
-		if (strcmp(fam->wife->givenName, person->givenName) == 0 && strcmp(fam->wife->surname, person->surname) == 0) {
+		if (fam->wife != NULL && strcmp(fam->wife->givenName, person->givenName) == 0 && strcmp(fam->wife->surname, person->surname) == 0) {
 			spouse = true;
 		}
 
-		if (strcmp(fam->husband->givenName, person->givenName) == 0 && strcmp(fam->husband->surname, person->surname) == 0) {
+		if (fam->husband != NULL && strcmp(fam->husband->givenName, person->givenName) == 0 && strcmp(fam->husband->surname, person->surname) == 0) {
 			spouse = true;
 		}
 
@@ -313,8 +313,8 @@ void descendants(List *d, const Individual *person) {
 			}
 
 			Individual *copy = malloc(sizeof(Individual));
-			copy->givenName = malloc(strlen(child->givenName));
-			copy->surname = malloc(strlen(child->surname));
+			copy->givenName = calloc(strlen(child->givenName), sizeof(char) + 20);
+			copy->surname = calloc(strlen(child->surname), sizeof(char) + 20);
 			copy->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
 
 			strcpy(copy->givenName, child->givenName);
@@ -387,228 +387,5 @@ void descendants(List *d, const Individual *person) {
 
 			descendants(d, child);
 		}
-	}
-}
-
-void descendantsN(List *g[], const Individual *person, int n, int max) {
-	if (n == max && max != 0) {
-		return;
-	}
-
-	n++;
-
-	ListIterator iterFam = createIterator(person->families);
-	Family *fam;
-
-	while ((fam = nextElement(&iterFam)) != NULL) {
-		bool spouse = false;
-
-		if (fam->wife != NULL && strcmp(fam->wife->givenName, person->givenName) == 0 && strcmp(fam->wife->surname, person->surname) == 0) {
-			spouse = true;
-		}
-
-		if (fam->husband != NULL && strcmp(fam->husband->givenName, person->givenName) == 0 && strcmp(fam->husband->surname, person->surname) == 0) {
-			spouse = true;
-		}
-
-		ListIterator iterChild = createIterator(fam->children);
-		Individual *child;
-
-		while ((child = nextElement(&iterChild)) != NULL) {
-			if (strcmp(child->givenName, person->givenName) == 0 && strcmp(child->surname, person->surname) == 0) {
-				break;
-			}
-
-			Individual *copy = malloc(sizeof(Individual));
-			copy->givenName = malloc(strlen(child->givenName));
-			copy->surname = malloc(strlen(child->surname));
-			copy->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
-
-			strcpy(copy->givenName, child->givenName);
-			strcpy(copy->surname, child->surname);
-
-			ListIterator iterEvent = createIterator(child->events);
-			Event *event;
-			Event *birth = NULL;
-
-			while ((event = nextElement(&iterEvent)) != NULL) {
-				if (strcmp(event->type, "BIRT") == 0) {
-					birth = malloc(sizeof(Event));
-					strcpy(birth->type, "BIRT");
-
-					birth->date = malloc(strlen(event->date) + 50);
-					strcpy(birth->date, event->date);
-					break;
-				}
-			}
-
-			if (birth != NULL) {
-				insertBack(&copy->events, birth);
-			}
-
-			bool exists = false;
-
-			// TODO maybe change to max gen
-			for (int x = 0; x < n; x++) {
-				ListIterator iter = createIterator(*g[x]);
-
-				Individual *i;
-
-				while ((i = nextElement(&iter)) != NULL) {
-					if (strcmp(i->givenName, child->givenName) == 0 && strcmp(i->surname, child->surname) == 0) {
-						char b1[100];
-						char b2[100];
-
-						b1[0] = 0;
-						b2[0] = 0;
-
-						iterEvent = createIterator(i->events);
-
-						while ((event = nextElement(&iterEvent)) != NULL) {
-							if (strcmp(event->type, "BIRT") == 0) {
-								strcpy(b1, event->date);
-							}
-						}
-
-						iterEvent = createIterator(child->events);
-
-						while ((event = nextElement(&iterEvent)) != NULL) {
-							if (strcmp(event->type, "BIRT") == 0) {
-								strcpy(b2, event->date);
-							}
-						}
-
-						if (b1[0] != 0 && b2[0] != 0) {
-							if (strcmp(b1, b2) == 0) {
-								exists = true;
-							}
-						} else if (b1[0] == 0 && b2[0] == 0) {
-							exists = true;
-						}
-					}
-				}
-			}
-
-			if (!exists) {
-				insertSorted(g[n - 1], copy);
-			}
-
-			if (getLength(child->families) == 1 && !spouse) {
-				continue;
-			}
-
-			descendantsN(g, child, n, max);
-		}
-	}
-}
-
-void ancestorsN(List *g[], const Individual *person, int n, int max) {
-	if (n == max && max != 0) {
-		return;
-	}
-
-	n++;
-
-	ListIterator iterFam = createIterator(person->families);
-	Family *fam;
-
-	while ((fam = nextElement(&iterFam)) != NULL) {
-		if (fam->wife != NULL && strcmp(fam->wife->givenName, person->givenName) == 0 && strcmp(fam->wife->surname, person->surname) == 0) {
-			continue;
-		}
-
-		if (fam->husband != NULL && strcmp(fam->husband->givenName, person->givenName) == 0 && strcmp(fam->husband->surname, person->surname) == 0) {
-			continue;
-		}
-
-		Individual *wife = NULL;
-
-		if (fam->wife != NULL) {
-			//printf("%s %s\n", fam->wife->givenName, fam->wife->surname);
-			wife = malloc(sizeof(Individual));
-			wife->givenName = malloc(strlen(fam->wife->givenName));
-			wife->surname = malloc(strlen(fam->wife->surname));
-			wife->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
-
-			strcpy(wife->givenName, fam->wife->givenName);
-			strcpy(wife->surname, fam->wife->surname);
-
-			ListIterator iterEvent = createIterator(fam->wife->events);
-			Event *event;
-			Event *birth = NULL;
-
-			while ((event = nextElement(&iterEvent)) != NULL) {
-				if (strcmp(event->type, "BIRT") == 0) {
-					birth = malloc(sizeof(Event));
-					strcpy(birth->type, "BIRT");
-
-					birth->date = malloc(strlen(event->date) + 50);
-					strcpy(birth->date, event->date);
-					break;
-				}
-			}
-
-			if (birth != NULL) {
-				insertBack(&wife->events, birth);
-			}
-
-			insertSorted(g[n - 1], wife);
-		}
-
-		Individual *husb = NULL;
-
-		if (fam->husband != NULL) {
-			husb = malloc(sizeof(Individual));
-			husb->givenName = malloc(strlen(fam->husband->givenName));
-			husb->surname = malloc(strlen(fam->husband->surname));
-			husb->events = initializeList(&printEvent, &deleteEvent, &compareEvents);
-
-			strcpy(husb->givenName, fam->husband->givenName);
-			strcpy(husb->surname, fam->husband->surname);
-
-			ListIterator iterEvent = createIterator(fam->husband->events);
-			Event *event;
-			Event *birth = NULL;
-
-			while ((event = nextElement(&iterEvent)) != NULL) {
-				if (strcmp(event->type, "BIRT") == 0) {
-					birth = malloc(sizeof(Event));
-					strcpy(birth->type, "BIRT");
-
-					birth->date = malloc(strlen(event->date)) + 50;
-					strcpy(birth->date, event->date);
-					break;
-				}
-			}
-
-			if (birth != NULL) {
-				insertBack(&husb->events, birth);
-			}
-
-			insertSorted(g[n - 1], husb);
-		}
-
-		if (fam->wife != NULL) {
-			ancestorsN(g, fam->wife, n, max);
-		}
-
-		if (fam->husband != NULL) {
-			ancestorsN(g, fam->husband, n, max);
-		}
-	}
-}
-
-int compareDesc(const void *a, const void *b) {
-	Individual *i1 = (Individual *) a;
-	Individual *i2 = (Individual *) b;
-
-	if (i1->surname[0] == 0) {
-		return 10000;
-	}
-
-	if (strcmp(i1->surname, i2->surname) == 0) {
-		return strcmp(i1->givenName, i2->givenName);
-	} else {
-		return strcmp(i1->surname, i2->surname);
 	}
 }

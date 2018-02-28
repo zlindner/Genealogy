@@ -5,15 +5,15 @@
 2 FORM LINEAGE-LINKED
 1 CHAR ASCII
 1 SUBM @S1@
-0 INDI @I1@
+0 @I1@ INDI
 1 NAME John /Smith/
 1 FAMS @F1@
 1 SEX M
-0 INDI @I2@
+0 @I2@ INDI
 1 NAME Elizabeth /Stansfield/
 1 FAMS @F1@
 1 SEX F
-0 INDI @I3@
+0 @I3@ INDI
 1 NAME James /Smith/
 1 FAMC @F1@
 1 SEX M
