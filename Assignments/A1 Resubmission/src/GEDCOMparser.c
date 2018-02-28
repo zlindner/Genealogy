@@ -6,7 +6,7 @@
 
 GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	GEDCOMerror err;
-	FILE *file;
+	FILE *file = NULL;
 
 	if (fileName == NULL) {
 		err.type = INV_FILE;
