@@ -1279,6 +1279,10 @@ List getDescendantListN(const GEDCOMobject *familyRecord, const Individual *pers
 		return d;
 	}
 
+	if ((int) maxGen < 0) {
+		return d;
+	}
+
 	int gens = 0;
 
 	if (maxGen == 0) {
@@ -1372,6 +1376,14 @@ Individual *JSONtoInd(const char *str) {
 		return NULL;
 	}
 
+	if (strcmp(str, "") == 0) {
+		return NULL;
+	}
+
+	if (strstr(str, "{") == NULL || strstr(str, "}") == NULL) {
+		return NULL;
+	}
+
 	Individual *ind = malloc(sizeof(Individual));
 	ind->givenName = calloc(1, sizeof(char));
 	ind->surname = calloc(1, sizeof(char));
@@ -1410,10 +1422,18 @@ GEDCOMobject *JSONtoGEDCOM(const char *str) {
 		return NULL;
 	}
 
+	if (strcmp(str, "") == 0) {
+		return NULL;
+	}
+
+	if (strstr(str, "{") == NULL || strstr(str, "}") == NULL) {
+		return NULL;
+	}
+
 	char *copy = malloc(strlen(str) + 1);
 	strcpy(copy, str);
 
-	Submitter *sub = malloc(sizeof(Submitter));
+	Submitter *sub = malloc(sizeof(Submitter) + 1);
 	sub->address[0] = '\0';
 	sub->otherFields = initializeList(&printField, &deleteField, &compareFields);
 
