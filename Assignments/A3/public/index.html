@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Geneology App</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CHANGE ME">
+    <meta name="keywords" content="CHANGE ME">
+    <meta name="author" content="Zachary Lindner">
+    <!-- Load jquery, bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <!-- Custom CSS End -->
+</head>
+
+<body>
+    <h1>Geneology App</h1><br>
+
+    <div class="statusPanel">
+        <h3>Status</h3>
+
+        <div class="content">
+            <textarea id="statusText" rows="4" cols="75" readonly></textarea>
+        </div>
+
+        <button id="clear">Clear</button>
+        <br><br>
+    </div>
+
+    <div class="logPanel">
+        <h3>File Log</h3>
+
+        <div class="content" id="logContent">
+            <table id="logTable"></table>
+        </div>
+    </div>
+
+    <div class="viewPanel">
+        <h3>GEDCOM View</h3>
+
+        <select id="fileSelect">
+            <option selected="selected" disabled="disabled">Select a file</option>
+        </select>
+
+        <div class="content">
+
+            <div id="viewContent"></div>
+
+            <table id="viewTable"></table>
+        </div>
+    </div>
+
+    <div class="uploadPanel">
+        <h3>Upload a GEDCOM File</h3>
+
+        <div class="content">
+            <form action="/upload" method="post" encType="multipart/form-data">
+                <input name="uploadFile" type="file" accept=".ged">
+
+                <div>
+                    <input type="submit" value="Upload">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="createPanel">
+        <h3>Create a GEDCOM File</h3>
+
+        <div class="content">
+            <form id="createForm">
+                File name: <input type="text" id="filenameInput">*<br><br>
+
+                Header source: <input type="text" id="sourceInput" value="PAF" readonly><br><br>
+                Header encoding:
+                <select id="encodingSelect">
+                    <option value="ansel">Ansel</option>
+                    <option value="utf8">UTF-8</option>
+                    <option value="unicode">Unicode</option>
+                    <option value="ascii" selected>Ascii</option>
+                </select>*<br><br>
+                GEDCOM version: <input type="text" id="versionInput" value="1.0" readonly><br><br>
+
+                Submitter name: <input type="text" id="subNameInput">*<br><br>
+                Submitter address: <input type="text" id="subAddrInput"><br><br>
+
+                <input type="submit" id="createGEDCOM" value="Create GEDCOM">
+            </form>
+
+        </div>
+    </div>
+
+    <div class="addIndivPanel">
+        <h3>Add Individuals</h3>
+
+        <select id="fileSelect2">
+            <option selected="selected" disabled="disabled">Select a file</option>
+        </select>
+
+        <div class="content">
+            <form id="addIndivForm">
+                Given name: <input type="text" id="givenInput"><br><br>
+                Surname: <input type="text" id="surnameInput"><br><br>
+
+                <input type="submit" id="addIndividual" value="Add Individual">
+            </form>
+        </div>
+    </div>
+
+    <div class="getDescPanel">
+        <h3>Get Descendants</h3>
+
+        <div class="content">
+            <select id="fileSelect3">
+                <option selected="selected" disabled="disabled">Select a file</option>
+            </select>
+
+            <br><br>
+
+            <form id="getDescForm">
+                Given name: <input type="text" id="givenInput2"><br><br>
+                Surname: <input type="text" id="surnameInput2"><br><br>
+                Max Generations: <input type="text" id="genInput"><br><br>
+
+                <input type="submit" id="getDescendants" value="Get Descendants">
+            </form>
+
+            <div id="descContent"></div>
+
+            <table id="descTable"></table>
+        </div>
+    </div>
+
+    <div class="getAncPanel">
+        <h3>Get Ancestors</h3>
+
+        <div class="content">
+            <select id="fileSelect4">
+                <option selected="selected" disabled="disabled">Select a file</option>
+            </select>
+
+            <br><br>
+
+            <form id="getAncForm">
+                Given name: <input type="text" id="givenInput3"><br><br>
+                Surname: <input type="text" id="surnameInput3"><br><br>
+                Max Generations: <input type="text" id="genInput2"><br><br>
+
+                <input type="submit" id="getAncestors" value="Get Ancestors">
+            </form>
+
+            <div id="ancContent"></div>
+
+            <table id="ancTable"></table>
+        </div>
+    </div>
+
+    <script src="/index.js"></script>
+</body>
+
+</html>

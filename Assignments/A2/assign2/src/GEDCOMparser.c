@@ -1261,7 +1261,7 @@ ErrorCode validateGEDCOM(const GEDCOMobject *obj) {
 }
 
 List getDescendantListN(const GEDCOMobject *familyRecord, const Individual *person, unsigned int maxGen) {
-	List d = initializeList(&printIndividual, &deleteIndividual, &compareIndividuals);
+	List d = initializeList(&printGeneration, &deleteGeneration, &compareGenerations);
 
 	if (familyRecord == NULL || person == NULL) {
 		return d;
@@ -1299,7 +1299,7 @@ List getDescendantListN(const GEDCOMobject *familyRecord, const Individual *pers
 }
 
 List getAncestorListN(const GEDCOMobject *familyRecord, const Individual *person, int maxGen) {
-	List d = initializeList(&printIndividual, &deleteIndividual, &compareIndividuals);
+	List d = initializeList(&printGeneration, &deleteGeneration, &compareGenerations);
 
 	if (familyRecord == NULL || person == NULL) {
 		return d;
@@ -1533,7 +1533,12 @@ char *gListToJSON(List gList) {
 }
 
 void deleteGeneration(void *toBeDeleted) {
-	//NO-OP
+	List *gen = (List *) toBeDeleted;
+
+	clearList(gen);
+
+	free(gen);
+	gen = NULL;
 }
 
 int compareGenerations(const void *first, const void *second) {

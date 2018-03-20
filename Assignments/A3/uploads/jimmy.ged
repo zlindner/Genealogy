@@ -1,0 +1,22 @@
+0 HEAD
+1 SOUR PAF
+1 GEDC
+2 VERS 1.000000
+2 FORM LINEAGE-LINKED
+1 CHAR ASCII
+1 SUBM @S1@
+0 @I1@ INDI
+1 NAME Henry /Innis/
+0 @I2@ INDI
+1 NAME Noah /Lindner/
+0 @I3@ INDI
+1 NAME Zach /Nibba/
+0 @I4@ INDI
+1 NAME Jfdas /fdafdsa/
+0 @I5@ INDI
+1 NAME fdsafdsa /fdsafdafdsa/
+0 @I6@ INDI
+1 NAME fdsafdsfdsa /zzz/
+0 @S1@ SUBM
+1 NAME Jimmy Neutron
+0 TRLR
