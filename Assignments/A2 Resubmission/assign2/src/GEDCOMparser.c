@@ -238,7 +238,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 			}
 
 			hasTRLR = true;
-			continue;
 		}
 
 		if (buildIndividual) {

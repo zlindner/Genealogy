@@ -72,7 +72,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 	while (fgets(line, sizeof(line), file)) {
 		lineNum++;
 
-		if (line[0] == '\n') {                                 // skip blank lines
+		if (line[0] == '\n') {                 // skip blank lines
 			continue;
 		}
 
@@ -103,7 +103,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 
 		char *value = line + 3 + strlen(tag);
 
-		if (strstr(tag, "@") == NULL) {                                 // only concered with pointers this pass
+		if (strstr(tag, "@") == NULL) {                 // only concered with pointers this pass
 			continue;
 		}
 
@@ -172,7 +172,7 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 		lineNum++;
 		int len = strlen(line);
 
-		if (line[0] == '\n') {                                 // skip blank lines
+		if (line[0] == '\n') {                 // skip blank lines
 			continue;
 		}
 
@@ -238,7 +238,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 			}
 
 			hasTRLR = true;
-			//continue;
 		}
 
 		if (buildIndividual) {
@@ -299,43 +298,39 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					goto ERROR;
 				}
 
-				if (strstr(value, "I") == NULL) {
-					Family *temp = lookupData(hashTable, value);
+				Family *temp = lookupData(hashTable, value);
 
-					if (temp == NULL) {
-						err.type = INV_RECORD;
-						err.line = lineNum;
-						goto ERROR;
-					}
+				if (temp == NULL) {
+					err.type = INV_RECORD;
+					err.line = lineNum;
+					goto ERROR;
+				}
 
-					insertBack(&individual->families, temp);
+				insertBack(&individual->families, temp);
 
-					bool F = false;
-					bool M = false;
-					ListIterator iter = createIterator(individual->otherFields);
-					Field *field;
-					while ((field = nextElement(&iter)) != NULL) {
-						if (strcmp(field->tag, "SEX") == 0) {
-							if (strcmp(field->value, "F") == 0) {
-								F = true;
-							} else if (strcmp(field->value, "M") == 0) {
-								M = true;
-							}
-
-							break;
+				bool F = false;
+				bool M = false;
+				ListIterator iter = createIterator(individual->otherFields);
+				Field *field;
+				while ((field = nextElement(&iter)) != NULL) {
+					if (strcmp(field->tag, "SEX") == 0) {
+						if (strcmp(field->value, "F") == 0) {
+							F = true;
+						} else if (strcmp(field->value, "M") == 0) {
+							M = true;
 						}
-					}
 
-					if (F && temp->wife == NULL) {
-						temp->wife = individual;
-					}
-
-					if (M && temp->husband == NULL) {
-						temp->husband = individual;
+						break;
 					}
 				}
 
+				if (F && temp->wife == NULL) {
+					temp->wife = individual;
+				}
 
+				if (M && temp->husband == NULL) {
+					temp->husband = individual;
+				}
 			} else if (strcmp(tag, "FAMC") == 0) {
 				if (buildEvent) {
 					insertBack(&individual->events, event);
@@ -356,21 +351,19 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					goto ERROR;
 				}
 
-				if (strstr(value, "I") == NULL) {
-					insertBack(&individual->families, temp);
+				insertBack(&individual->families, temp);
 
-					bool add = true;
-					ListIterator iter = createIterator(temp->children);
-					Individual *child;
-					while ((child = nextElement(&iter)) != NULL) {
-						if (compareIndividuals(child, individual) == 0) {
-							add = false;
-						}
+				bool add = true;
+				ListIterator iter = createIterator(temp->children);
+				Individual *child;
+				while ((child = nextElement(&iter)) != NULL) {
+					if (compareIndividuals(child, individual) == 0) {
+						add = false;
 					}
+				}
 
-					if (add) {
-						insertBack(&temp->children, individual);
-					}
+				if (add) {
+					insertBack(&temp->children, individual);
 				}
 			} else if (isIndivEvent(tag)) {
 				if (buildEvent) {
@@ -433,8 +426,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				}
 
 				family->husband = temp;
-
-				insertBack(&temp->families, family);
 			} else if (strcmp(tag, "WIFE") == 0) {
 				if (value[0] == '\0') {
 					err.type = INV_RECORD;
@@ -451,8 +442,6 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 				}
 
 				family->wife = temp;
-
-				insertBack(&temp->families, family);
 			} else if (strcmp(tag, "CHIL") == 0) {
 				if (value[0] == '\0') {
 					err.type = INV_RECORD;
@@ -468,20 +457,18 @@ GEDCOMerror createGEDCOM(char *fileName, GEDCOMobject **obj) {
 					goto ERROR;
 				}
 
-				insertBack(&family->children, temp);
-
 				bool add = true;
-				   ListIterator iter = createIterator(family->children);
-				   Individual *child;
-				   while ((child = nextElement(&iter)) != NULL) {
-				        if (compareIndividuals(child, temp) == 0) {
-				                add = false;
-				        }
-				   }
+				ListIterator iter = createIterator(family->children);
+				Individual *child;
+				while ((child = nextElement(&iter)) != NULL) {
+					if (compareIndividuals(child, temp) == 0) {
+						add = false;
+					}
+				}
 
-				   if (add) {
-				        insertBack(&family->children, temp);
-				   }
+				if (add) {
+					insertBack(&family->children, temp);
+				}
 			} else if (isFamEvent(tag) && !buildEvent) {
 				if (value != NULL) {
 					err.type = INV_RECORD;
@@ -1280,10 +1267,6 @@ List getDescendantListN(const GEDCOMobject *familyRecord, const Individual *pers
 		return d;
 	}
 
-	if ((int) maxGen < 0) {
-		return d;
-	}
-
 	int gens = 0;
 
 	if (maxGen == 0) {
@@ -1377,14 +1360,6 @@ Individual *JSONtoInd(const char *str) {
 		return NULL;
 	}
 
-	if (strcmp(str, "") == 0) {
-		return NULL;
-	}
-
-	if (strstr(str, "{") == NULL || strstr(str, "}") == NULL) {
-		return NULL;
-	}
-
 	Individual *ind = malloc(sizeof(Individual));
 	ind->givenName = calloc(1, sizeof(char));
 	ind->surname = calloc(1, sizeof(char));
@@ -1423,18 +1398,10 @@ GEDCOMobject *JSONtoGEDCOM(const char *str) {
 		return NULL;
 	}
 
-	if (strcmp(str, "") == 0) {
-		return NULL;
-	}
-
-	if (strstr(str, "{") == NULL || strstr(str, "}") == NULL) {
-		return NULL;
-	}
-
 	char *copy = malloc(strlen(str) + 1);
 	strcpy(copy, str);
 
-	Submitter *sub = malloc(sizeof(Submitter) + 1);
+	Submitter *sub = malloc(sizeof(Submitter));
 	sub->address[0] = '\0';
 	sub->otherFields = initializeList(&printField, &deleteField, &compareFields);
 

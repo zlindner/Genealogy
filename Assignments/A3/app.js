@@ -122,7 +122,7 @@ app.get('/createGEDCOM', function(req, res) {
     let val = gedcom.createSimpleGEDCOM(filename, source, encoding, version, subName, subAddr);
 
     if (val == '1') {
-        var result = {name: filname};
+        var result = {name: filename};
 
         res.send(result);
     } else {
