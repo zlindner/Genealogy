@@ -283,7 +283,6 @@ void clearListFake(List *list) {
 		list->head = list->head->next;
 
 		free(node);
-		node = NULL;
 	}
 
 	list->head = NULL;
