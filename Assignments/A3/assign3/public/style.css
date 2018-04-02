@@ -1,0 +1,131 @@
+html {
+    width: 70%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0 auto;
+    font-size: 16px;
+    background-color: #FFFFFF;
+}
+
+body {
+    height: 100%;
+    min-height: 100%;
+    line-height: 1.75;
+    background-color: #FFFFFF;
+}
+
+a:link:hover {
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+    text-decoration: underline;
+    cursor: pointer;
+    cursor: hand;
+}
+
+h1 {
+    text-align: center;
+}
+
+h3 {
+    margin-top: 10px;
+    margin-bottom: 25px;
+}
+
+input[type=submit], button {
+    cursor: pointer;
+    cursor: hand;
+}
+
+@media(max-width: 900px) {
+    html {
+        font-size: 14px !important;
+        width: 80% !important;
+    }
+}
+
+@media(max-width: 480px) {
+    html {
+        font-size: 12px !important;
+        width: 90% !important;
+    }
+}
+
+@media(max-width: 320px) {
+    html {
+        font-size: 12px !important;
+        width: 100% !important;
+    }
+}
+
+.statusPanel {
+    text-align: center;
+    border: 1px solid black;
+}
+
+.logPanel {
+    height: 400px;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.viewPanel {
+    height: 400px;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.uploadPanel {
+    text-align: center;
+    border: 1px solid black;
+}
+
+.createPanel {
+    height: 400px;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.addIndivPanel {
+    text-align: center;
+    border: 1px solid black;
+}
+
+.getDescPanel {
+    height: 500px;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.getAncPanel {
+    height: 500px;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.content {
+    height: 70%;
+    padding: 20px;
+    overflow: auto;
+}
+
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+table {
+    margin: 0 auto;
+}
+
+th, td {
+    padding: 10px;
+}
+
+div {
+    margin-bottom: 15px;
+}
+
+div:first-of-type {
+    margin-top: 15px;
+}

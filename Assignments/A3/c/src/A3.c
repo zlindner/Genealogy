@@ -7,21 +7,11 @@
 
 int main(void) {
 	GEDCOMobject *obj;
-	GEDCOMerror err = createGEDCOM("../uploads/jimmy.ged", &obj);
+	GEDCOMerror err = createGEDCOM("../uploads/shakespeare.ged", &obj);
 
-	if (err.type == OK) {
-		char *str = printGEDCOM(obj);
-		printf("%s\n", str);
-		free(str);
-
-        writeGEDCOM("assets/output.ged", obj);
-
-		deleteGEDCOM(obj);
-	}
-
-	char *errStr = printError(err);
-	printf("%s\n", errStr);
-	free(errStr);
+	//char *info = getFileInfo("../uploads/shakespeare.ged");
+	//int val = createIndividual("shakespeare.ged", "Henry", "Innis");
+	char *desc = getDesc("shakespeare.ged", "Mary", "Arden", 0);
 
 	return 0;
 }

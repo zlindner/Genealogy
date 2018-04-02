@@ -635,7 +635,7 @@ char *getFileInfo(char *filename) {
 	char *info = malloc(strlen(temp) + 1);
 	strcpy(info, temp);
 
-	deleteGEDCOM(obj);
+	//deleteGEDCOM(obj);
 
 	return info;
 }
@@ -718,7 +718,7 @@ int createSimpleGEDCOM(char *filename, char *source, int encoding, char *version
 	strcpy(sub->address, subAddr);
 
 	char path[100];
-	sprintf(path, "./uploads/%s", filename);
+	sprintf(path, "uploads/%s", filename);
 
 	GEDCOMerror err = writeGEDCOM(path, obj);
 
@@ -726,7 +726,7 @@ int createSimpleGEDCOM(char *filename, char *source, int encoding, char *version
 		return 0;
 	}
 
-	deleteGEDCOM(obj);
+	//deleteGEDCOM(obj);
 
 	return 1;
 }
@@ -746,7 +746,7 @@ int createIndividual(char *filename, char *givenName, char *surname) {
 
 	GEDCOMobject *obj;
 	char path[100];
-	sprintf(path, "./uploads/%s", filename);
+	sprintf(path, "uploads/%s", filename);
 	GEDCOMerror err = createGEDCOM(path, &obj);
 
 	if (err.type != OK) {
@@ -761,7 +761,7 @@ int createIndividual(char *filename, char *givenName, char *surname) {
 		return 0;
 	}
 
-	deleteGEDCOM(obj);
+	//deleteGEDCOM(obj);
 
 	return 1;
 }
@@ -784,7 +784,7 @@ bool comparePerson(const void *first, const void *second) {
 char *getDesc(char *filename, char *givenName, char *surname, int maxGen) {
 	GEDCOMobject *obj;
 	char path[100];
-	sprintf(path, "./uploads/%s", filename);
+	sprintf(path, "uploads/%s", filename);
 	GEDCOMerror err = createGEDCOM(path, &obj);
 
 	if (err.type != OK) {
@@ -805,7 +805,7 @@ char *getDesc(char *filename, char *givenName, char *surname, int maxGen) {
 
 	Individual *person = findPerson(obj, &comparePerson, ind);
 
-	deleteIndividual(ind);
+	//deleteIndividual(ind);
 
 	if (person == NULL) {
 		return NULL;
@@ -814,7 +814,7 @@ char *getDesc(char *filename, char *givenName, char *surname, int maxGen) {
 	List desc = getDescendantListN(obj, person, maxGen);
 	char *gList = gListToJSON(desc);
 
-	deleteGEDCOM(obj);
+	//deleteGEDCOM(obj);
 
 	return gList;
 }
@@ -822,7 +822,7 @@ char *getDesc(char *filename, char *givenName, char *surname, int maxGen) {
 char *getAnc(char *filename, char *givenName, char *surname, int maxGen) {
 	GEDCOMobject *obj;
 	char path[100];
-	sprintf(path, "./uploads/%s", filename);
+	sprintf(path, "uploads/%s", filename);
 	GEDCOMerror err = createGEDCOM(path, &obj);
 
 	if (err.type != OK) {
@@ -843,7 +843,7 @@ char *getAnc(char *filename, char *givenName, char *surname, int maxGen) {
 
 	Individual *person = findPerson(obj, &comparePerson, ind);
 
-	deleteIndividual(ind);
+	//deleteIndividual(ind);
 
 	if (person == NULL) {
 		return NULL;
@@ -852,7 +852,7 @@ char *getAnc(char *filename, char *givenName, char *surname, int maxGen) {
 	List desc = getAncestorListN(obj, person, maxGen);
 	char *gList = gListToJSON(desc);
 
-	deleteGEDCOM(obj);
+	//deleteGEDCOM(obj);
 
 	return gList;
 }
